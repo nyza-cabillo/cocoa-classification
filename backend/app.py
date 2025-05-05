@@ -16,8 +16,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Supabase Client Initialization
-url = os.getenv("VITE_SUPABASE_URL")
-key = os.getenv("VITE_SUPABASE_ANON_KEY")
+url = os.getenv("SUPABASE_URL")
+key = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
 app = Flask(__name__)
