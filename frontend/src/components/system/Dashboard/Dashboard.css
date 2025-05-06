@@ -60,6 +60,11 @@
   color: #2c3e50;
 }
 
+.right-column h3 {
+  margin-top: 20px;
+  text-align: center;
+}
+
 /* Upload Box Styling */
 .upload-box {
   background-color: #ffffff;
@@ -87,20 +92,55 @@
 }
 
 /* Feedback Form */
+.feedback {
+  background-color: #acd1af;
+  padding-bottom: 5px;
+  border-radius: 4px;
+}
+
 .feedback-form label {
   font-weight: bold;
   margin-bottom: 6px;
   display: inline-block;
   color: #2c3e50;
+  padding: 5px;
 }
-.feedback-form textarea {
-  width: 100%;
+.feedback-textarea {
+  width: 80%;
   padding: 12px;
   border: 1px solid #bbb;
   border-radius: 8px;
   font-size: 15px;
   background-color: #fafafa;
   resize: vertical;
+
+  display: block;
+  margin: 20px auto;
+  text-align: center;
+}
+
+.feedback-button {
+  width: 200px;
+  background-color: #2ecc71;
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: 15px;
+  cursor: pointer;
+  transition:
+    background-color 0.3s ease,
+    transform 0.2s ease;
+
+  /* Centering styles */
+  display: block;
+  margin: 20px auto;
+  text-align: center;
+}
+.feedback-button:hover {
+  background-color: #27ae60;
+  transform: scale(1.03);
 }
 
 /* Button Group */

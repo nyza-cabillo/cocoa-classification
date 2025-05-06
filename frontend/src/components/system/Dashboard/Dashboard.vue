@@ -10,23 +10,25 @@
       <div class="left-column">
         <div class="upload-box">
           <h3>Upload a Cocoa Pod Image</h3>
-          <input type="file" ref="fileInput" @change="handleImageUpload" />
+          <input type="file" ref="fileInput" @change="handleFileChange" />
         </div>
         <div class="button-group">
           <button @click="clearImage" class="clear-btn">Clear</button>
           <button @click="submitImage" class="submit-btn">Submit</button>
         </div>
+        <div class="feedback">
+          <label for="feedback">Your Feedback:</label>
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            v-model="feedback"
+            placeholder="What do you think about the prediction?"
+          ></textarea>
+          <button class="feedback-button" @click="submitFeedback">Submit Feedback</button>
 
-        <label for="feedback">Your Feedback:</label>
-        <textarea
-          id="feedback"
-          v-model="feedback"
-          placeholder="What do you think about the prediction?"
-        ></textarea>
-        <button @click="submitFeedback">Submit Feedback</button>
-
-        <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
-        <p v-if="error" class="error-message">{{ error }}</p>
+          <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
+          <p v-if="error" class="error-message">{{ error }}</p>
+        </div>
       </div>
 
       <!-- Right Column -->
@@ -52,7 +54,7 @@
 
 <script>
 import { supabase } from '@/utils/supabase'
-import { useRouter } from 'vue-router' // Import Vue Router for navigation
+import { uploadImageToSupabase } from '@/utils/supabase'
 
 export default {
   data() {
@@ -60,28 +62,52 @@ export default {
       feedback: '',
       error: '',
       successMessage: '',
-      predictionId: '', // Corrected variable usage
-      imagePreview: '', // Add imagePreview to the data
-      predictionResult: '', // Ensure to have this for displaying predictions
-      predictionConfidence: '', // To show prediction confidence
+      predictionId: '',
+      imagePreview: '',
+      predictionResult: '',
+      predictionConfidence: '',
+      perModelResults: '',
+      imageFile: null,
     }
   },
   methods: {
-    // Clear image and form data
+    handleFileChange(e) {
+      this.imageFile = e.target.files[0]
+    },
+
     clearImage() {
       this.imagePreview = ''
       this.predictionResult = ''
       this.predictionConfidence = ''
       this.feedback = ''
       this.$refs.fileInput.value = ''
+      this.successMessage = ''
+      this.error = ''
+      this.imageFile = null
     },
 
-    // Handle the image submission
+    async handleUpload() {
+      if (!this.imageFile) {
+        this.error = 'No image selected.'
+        return
+      }
+
+      const result = await uploadImageToSupabase(this.imageFile)
+
+      if (result.error) {
+        this.error = result.error
+        this.successMessage = ''
+      } else {
+        this.successMessage = 'Image uploaded successfully!'
+        this.error = ''
+        console.log('Uploaded path:', result.data.path)
+      }
+    },
+
     async submitImage() {
       this.error = ''
       this.successMessage = ''
 
-      // Ensure the user is logged in
       const {
         data: { user },
         error: userError,
@@ -101,11 +127,8 @@ export default {
       }
 
       try {
-        // 1. Upload image to Supabase Storage
         const filePath = `images/${Date.now()}_${file.name}`
-        const { error: uploadError } = await supabase.storage
-          .from('images') // Your storage bucket name
-          .upload(filePath, file)
+        const { error: uploadError } = await supabase.storage.from('images').upload(filePath, file)
 
         if (uploadError) {
           this.error = 'Failed to upload image to storage.'
@@ -115,7 +138,6 @@ export default {
 
         const imageUrl = supabase.storage.from('images').getPublicUrl(filePath).data.publicUrl
 
-        // 2. Save image metadata to Supabase DB
         const { data: imageData, error: imageInsertError } = await supabase
           .from('image')
           .insert([{ user_id: user.id, image_url: imageUrl }])
@@ -127,7 +149,6 @@ export default {
           return
         }
 
-        // 3. Send image to Flask backend for prediction
         const formData = new FormData()
         formData.append('image', file)
 
@@ -144,7 +165,6 @@ export default {
         const predicted_class = predictionResponse.prediction
         const confidence = predictionResponse.confidence
 
-        // 4. Save prediction to Supabase
         const { data: predictionData, error: predictionInsertError } = await supabase
           .from('prediction')
           .insert([
@@ -162,7 +182,6 @@ export default {
           return
         }
 
-        // 5. Update frontend display
         this.imagePreview = imageUrl
         this.predictionResult = predicted_class
         this.predictionConfidence = confidence
@@ -174,7 +193,6 @@ export default {
       }
     },
 
-    // Submit feedback
     async submitFeedback() {
       const {
         data: { user },
@@ -211,11 +229,10 @@ export default {
       }
     },
 
-    // Handle logout functionality
     async handleLogout() {
       try {
         await supabase.auth.signOut()
-        this.$router.push('/login') // Redirect to login page after logout
+        this.$router.push('/login')
       } catch (error) {
         console.error('Error during logout:', error.message)
       }
