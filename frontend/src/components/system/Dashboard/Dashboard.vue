@@ -1,9 +1,8 @@
 <template>
   <div class="dashboard-container">
     <h1 class="title">
-      Cocoa Pod Disease Classifier<button @click="handleLogout" class="logout-button">
-        Logout
-      </button>
+      Cocoa Pod Disease Classifier
+      <button @click="handleLogout" class="logout-button">Logout</button>
     </h1>
 
     <div class="content">
@@ -53,6 +52,7 @@
 
 <script>
 import { supabase } from '@/utils/supabase'
+import { useRouter } from 'vue-router' // Import Vue Router for navigation
 
 export default {
   data() {
@@ -67,6 +67,7 @@ export default {
     }
   },
   methods: {
+    // Clear image and form data
     clearImage() {
       this.imagePreview = ''
       this.predictionResult = ''
@@ -75,6 +76,7 @@ export default {
       this.$refs.fileInput.value = ''
     },
 
+    // Handle the image submission
     async submitImage() {
       this.error = ''
       this.successMessage = ''
@@ -172,8 +174,8 @@ export default {
       }
     },
 
+    // Submit feedback
     async submitFeedback() {
-      // Get current user
       const {
         data: { user },
         error: userError,
@@ -184,25 +186,39 @@ export default {
         return
       }
 
-      // Insert feedback
-      const { error } = await supabase.from('feedback').insert([
-        {
-          user_id: user.id,
-          prediction_id: this.predictionId,
-          feedback_text: this.feedback,
-        },
-      ])
+      try {
+        const response = await fetch('http://127.0.0.1:5000/submit_feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: user.id,
+            prediction_id: this.predictionId,
+            feedback_text: this.feedback,
+          }),
+        })
 
-      if (error) {
-        console.error('Error submitting feedback:', error.message)
-        this.error = 'Failed to submit feedback.'
-        return
+        if (!response.ok) {
+          throw new Error('Feedback submission failed.')
+        }
+
+        const feedbackResponse = await response.json()
+        this.successMessage = feedbackResponse.message || 'Feedback submitted successfully!'
+        this.error = ''
+        this.feedback = ''
+      } catch (err) {
+        console.error(err)
+        this.error = 'An error occurred during feedback submission.'
       }
+    },
 
-      // Success
-      this.feedback = ''
-      this.successMessage = 'Feedback submitted successfully!'
-      this.error = ''
+    // Handle logout functionality
+    async handleLogout() {
+      try {
+        await supabase.auth.signOut()
+        this.$router.push('/login') // Redirect to login page after logout
+      } catch (error) {
+        console.error('Error during logout:', error.message)
+      }
     },
   },
 }
