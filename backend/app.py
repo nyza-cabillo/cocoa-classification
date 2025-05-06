@@ -21,7 +21,8 @@ key = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:5173"])  # 👈 Enable CORS for Vue frontend (Vite default)
+CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
+  # 👈 Enable CORS for Vue frontend (Vite default)
 
 # Constants
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
