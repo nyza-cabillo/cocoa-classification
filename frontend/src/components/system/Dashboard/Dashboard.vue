@@ -127,6 +127,7 @@ export default {
       }
 
       try {
+        // Upload image to Supabase Storage
         const filePath = `images/${Date.now()}_${file.name}`
         const { error: uploadError } = await supabase.storage.from('images').upload(filePath, file)
 
@@ -138,54 +139,30 @@ export default {
 
         const imageUrl = supabase.storage.from('images').getPublicUrl(filePath).data.publicUrl
 
-        const { data: imageData, error: imageInsertError } = await supabase
-          .from('image')
-          .insert([{ user_id: user.id, image_url: imageUrl }])
-          .select()
-          .single()
-
-        if (imageInsertError) {
-          this.error = 'Error saving image metadata.'
-          return
-        }
-
+        // PREPARE FormData to send to Flask backend
         const formData = new FormData()
         formData.append('image', file)
+        formData.append('user_id', user.id) //  ADDED user_id
+        formData.append('image_url', imageUrl) //  ADDED image_url
 
+        // Send to Flask backend for prediction and auto-saving
         const response = await fetch('http://127.0.0.1:5000/predict', {
           method: 'POST',
           body: formData,
         })
 
         if (!response.ok) {
-          throw new Error('Prediction request failed.')
-        }
-
-        const predictionResponse = await response.json()
-        const predicted_class = predictionResponse.prediction
-        const confidence = predictionResponse.confidence
-
-        const { data: predictionData, error: predictionInsertError } = await supabase
-          .from('prediction')
-          .insert([
-            {
-              image_id: imageData.id,
-              predicted_class,
-              confidence,
-            },
-          ])
-          .select()
-          .single()
-
-        if (predictionInsertError) {
-          this.error = 'Error saving prediction to database.'
+          const backendError = await response.json()
+          this.error = backendError.error || 'Prediction request failed.'
           return
         }
 
+        //  Read and use backend response
+        const predictionResponse = await response.json()
         this.imagePreview = imageUrl
-        this.predictionResult = predicted_class
-        this.predictionConfidence = confidence
-        this.predictionId = predictionData.id
+        this.predictionResult = predictionResponse.prediction
+        this.predictionConfidence = predictionResponse.confidence
+        this.predictionId = predictionResponse.prediction_id // Use backend's returned ID
         this.successMessage = 'Prediction completed successfully!'
       } catch (err) {
         console.error(err)
@@ -216,7 +193,9 @@ export default {
         })
 
         if (!response.ok) {
-          throw new Error('Feedback submission failed.')
+          const backendError = await response.json()
+          this.error = backendError.error || 'Feedback submission failed.'
+          return
         }
 
         const feedbackResponse = await response.json()

@@ -85,10 +85,13 @@ def save_feedback(user_id, prediction_id, feedback_text):
 # Predict endpoint
 @app.route('/predict', methods=['POST'])
 def predict():
-    if 'image' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
+    if 'image' not in request.files or 'user_id' not in request.form or 'image_url' not in request.form:
+        return jsonify({'error': 'Missing image, user_id, or image_url'}), 400
 
     file = request.files['image']
+    user_id = request.form['user_id']
+    image_url = request.form['image_url']
+
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
 
@@ -100,13 +103,18 @@ def predict():
         confidence = float(f"{preds[0][pred_idx]:.4f}")
         predicted_class = CLASS_NAMES[pred_idx]
 
+        # Save prediction in Supabase
+        prediction_id = save_prediction(user_id, image_url, predicted_class, confidence)
+
         return jsonify({
             'prediction': predicted_class,
-            'confidence': confidence
+            'confidence': confidence,
+            'prediction_id': prediction_id
         })
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 # Feedback endpoint
 @app.route('/submit_feedback', methods=['POST'])
@@ -126,7 +134,11 @@ def submit_feedback():
         else:
             return jsonify({'error': 'Failed to submit feedback'}), 500
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        #  Provide detailed error info
+        error_message = f"Prediction failed: {str(e)}"
+        print(error_message)
+        return jsonify({'error': error_message}), 500
+
     
 @app.route('/')
 def index():
