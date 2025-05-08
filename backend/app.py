@@ -2,7 +2,7 @@ import io
 import os
 import numpy as np
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # 👈 Added for CORS support
+from flask_cors import CORS  # Added for CORS support
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 from tensorflow.keras.applications import ResNet50
 from tensorflow.keras.applications.resnet import preprocess_input as resnet_preprocess
@@ -22,7 +22,7 @@ supabase: Client = create_client(url, key)
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
-  # 👈 Enable CORS for Vue frontend (Vite default)
+  #  Enable CORS for Vue frontend (Vite default)
 
 # Constants
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -50,30 +50,42 @@ def prepare_image(image):
     return resnet_preprocess(image)
 
 # Save prediction to Supabase
-def save_prediction(user_id, image_url, predicted_class, confidence):
+from datetime import datetime
+
+def save_prediction(image_url, predicted_class, confidence):
     try:
-        response = supabase.table('prediction').insert({
-            'user_id': user_id,
-            'image_url': image_url,
+        response = supabase.table('predictions').insert({
+            'image_id': image_url,
             'predicted_class': predicted_class,
-            'confidence': confidence,
+            'confidence': float(confidence),
             'created_at': datetime.utcnow().isoformat()
         }).execute()
+
+        print("Supabase prediction insert response:", response)
+
         if response.error:
             print(f"Error saving prediction: {response.error.message}")
+            return None
+
+        if not response.data or 'id' not in response.data[0]:
+            print("Prediction ID not returned from Supabase.")
+            return None
+
         return response.data[0]['id']
+
     except Exception as e:
-        print(f"Error in saving prediction: {str(e)}")
+        print(f"Prediction error: {str(e)}")
         return None
+
+
 
 # Save feedback to Supabase
 def save_feedback(user_id, prediction_id, feedback_text):
     try:
-        response = supabase.table('feedback').insert({
+        response = supabase.table('feedbacks').insert({
             'user_id': user_id,
             'prediction_id': prediction_id,
             'feedback_text': feedback_text,
-            'created_at': datetime.utcnow().isoformat()
         }).execute()
         if response.error:
             print(f"Error saving feedback: {response.error.message}")
@@ -89,7 +101,6 @@ def predict():
         return jsonify({'error': 'Missing image, user_id, or image_url'}), 400
 
     file = request.files['image']
-    user_id = request.form['user_id']
     image_url = request.form['image_url']
 
     if file.filename == '':
@@ -100,11 +111,17 @@ def predict():
         processed_img = prepare_image(image)
         preds = model.predict(processed_img)
         pred_idx = np.argmax(preds)
-        confidence = float(f"{preds[0][pred_idx]:.4f}")
+        confidence = float(f"{preds[0][pred_idx] * 100:.2f}")
         predicted_class = CLASS_NAMES[pred_idx]
 
-        # Save prediction in Supabase
-        prediction_id = save_prediction(user_id, image_url, predicted_class, confidence)
+        # Save prediction ONCE and log result
+        prediction_id = save_prediction(image_url, predicted_class, confidence)
+
+        if prediction_id is None:
+            print("Failed to insert prediction into Supabase.")
+            return jsonify({'error': 'Failed to save prediction to database'}), 500
+
+        print(f"Saved prediction with ID: {prediction_id}")
 
         return jsonify({
             'prediction': predicted_class,
@@ -113,9 +130,10 @@ def predict():
         })
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Prediction error: {e}")
+        return jsonify({'error': 'Prediction failed', 'details': str(e)}), 500
 
-
+  
 # Feedback endpoint
 @app.route('/submit_feedback', methods=['POST'])
 def submit_feedback():
@@ -140,7 +158,7 @@ def submit_feedback():
         return jsonify({'error': error_message}), 500
 
     
-@app.route('/')
+@app.route('/') 
 def index():
     return jsonify({'message': 'Flask backend is running.'})
 

@@ -25,14 +25,14 @@ export const uploadImageToSupabase = async (file, folder = 'uploads') => {
       .upload(filePath, file, { upsert: true })
 
     if (error) {
-      console.error('❌ Upload error:', error.message || error)
+      console.error('Upload error:', error.message || error)
       return { data: null, error: error.message }
     }
 
-    console.log('✅ Image uploaded successfully:', data)
+    console.log('Image uploaded successfully:', data)
     return { data, error: null }
   } catch (err) {
-    console.error('❌ Unexpected error during upload:', err)
+    console.error('Unexpected error during upload:', err)
     return { data: null, error: err.message || 'Unexpected error' }
   }
 }
