@@ -22,7 +22,7 @@
             class="feedback-textarea"
             id="feedback"
             v-model="feedback"
-            placeholder="What do you think about the prediction?"
+            placeholder="Feedback Here(Optional)"
           ></textarea>
           <button class="feedback-button" @click="submitFeedback">Submit Feedback</button>
 
@@ -40,8 +40,13 @@
 
         <p v-if="predictionResult">
           <strong>Prediction:</strong> {{ predictionResult }} (Confidence:
-          {{ (predictionConfidence * 100).toFixed(2) }}%
+          {{ predictionConfidence }}%)
         </p>
+
+        <div v-if="perModelResults" class="prediction-result">
+          <h4>Model Predictions:</h4>
+          <pre>{{ perModelResults }}</pre>
+        </div>
       </div>
     </div>
   </div>
@@ -61,6 +66,7 @@ export default {
       imagePreview: '',
       predictionResult: '',
       predictionConfidence: '',
+      perModelResults: '',
       imageFile: null,
     }
   },
@@ -97,7 +103,7 @@ export default {
         console.log('Uploaded path:', result.data.path)
       }
     },
-    /////////////////////////////////////
+
     async submitImage() {
       this.error = ''
       this.successMessage = ''
@@ -122,13 +128,8 @@ export default {
 
       try {
         // Upload image to Supabase Storage
-        const filePath = `Rawdata/${Date.now()}_${file.name}` // folder inside bucket
-        const { data, error: uploadError } = await supabase.storage
-          .from('images')
-          .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: false,
-          })
+        const filePath = `images/${Date.now()}_${file.name}`
+        const { error: uploadError } = await supabase.storage.from('images').upload(filePath, file)
 
         if (uploadError) {
           this.error = 'Failed to upload image to storage.'
@@ -161,18 +162,14 @@ export default {
         this.imagePreview = imageUrl
         this.predictionResult = predictionResponse.prediction
         this.predictionConfidence = predictionResponse.confidence
-        this.predictionId = predictionResponse.prediction_id // assign
-
-        // 🔍 ADD THIS
-        console.log('Received prediction ID:', this.predictionId)
-
+        this.predictionId = predictionResponse.prediction_id // Use backend's returned ID
         this.successMessage = 'Prediction completed successfully!'
       } catch (err) {
         console.error(err)
         this.error = 'An error occurred during prediction.'
       }
     },
-    ///////////////////////////////////////
+
     async submitFeedback() {
       const {
         data: { user },
@@ -184,17 +181,10 @@ export default {
         return
       }
 
-      if (!this.predictionId || !this.feedback) {
-        this.error = 'Please complete a prediction and enter feedback before submitting.'
-        return
-      }
-
       try {
         const response = await fetch('http://127.0.0.1:5000/submit_feedback', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             user_id: user.id,
             prediction_id: this.predictionId,
@@ -202,18 +192,19 @@ export default {
           }),
         })
 
-        const result = await response.json()
-
         if (!response.ok) {
-          this.error = result.error || 'Feedback submission failed.'
-        } else {
-          this.successMessage = result.message
-          this.error = ''
-          this.feedback = ''
+          const backendError = await response.json()
+          this.error = backendError.error || 'Feedback submission failed.'
+          return
         }
+
+        const feedbackResponse = await response.json()
+        this.successMessage = feedbackResponse.message || 'Feedback submitted successfully!'
+        this.error = ''
+        this.feedback = ''
       } catch (err) {
-        console.error('Feedback error:', err)
-        this.error = 'An error occurred while submitting feedback.'
+        console.error(err)
+        this.error = 'An error occurred during feedback submission.'
       }
     },
 
