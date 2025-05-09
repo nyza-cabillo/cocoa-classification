@@ -1,3 +1,72 @@
+<style src="./RegisterView.css"></style>
+<script>
+import { supabase } from '@/utils/supabase'
+
+export default {
+  data() {
+    return {
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      error: null,
+      successMessage: null,
+    }
+  },
+  methods: {
+    async handleRegister() {
+      const { email, password, confirmPassword, firstName, lastName } = this
+
+      // Reset previous messages
+      this.error = ''
+      this.successMessage = ''
+
+      if (password !== confirmPassword) {
+        this.error = 'Passwords do not match.'
+        return
+      }
+
+      try {
+        const { data, error: registerError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              first_name: firstName,
+              last_name: lastName,
+            },
+          },
+        })
+
+        if (registerError) {
+          this.error = registerError.message
+          return
+        }
+
+        this.successMessage = 'Registration successful! Logging you in...'
+
+        // Delay and redirect to login
+        setTimeout(() => {
+          this.$router.push('/login')
+
+          // Reset form
+          this.firstName = ''
+          this.lastName = ''
+          this.email = ''
+          this.password = ''
+          this.confirmPassword = ''
+          this.successMessage = ''
+          this.error = ''
+        }, 2000)
+      } catch (err) {
+        this.error = err.message
+      }
+    },
+  },
+}
+</script>
+
 <template>
   <div class="register-container">
     <form class="register-form" @submit.prevent="handleRegister">
@@ -77,73 +146,3 @@
     </form>
   </div>
 </template>
-
-<script>
-import { supabase } from '@/utils/supabase'
-
-export default {
-  data() {
-    return {
-      firstName: '',
-      lastName: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      error: null,
-      successMessage: null,
-    }
-  },
-  methods: {
-    async handleRegister() {
-      const { email, password, confirmPassword, firstName, lastName } = this
-
-      // Reset previous messages
-      this.error = ''
-      this.successMessage = ''
-
-      if (password !== confirmPassword) {
-        this.error = 'Passwords do not match.'
-        return
-      }
-
-      try {
-        const { data, error: registerError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              first_name: firstName,
-              last_name: lastName,
-            },
-          },
-        })
-
-        if (registerError) {
-          this.error = registerError.message
-          return
-        }
-
-        this.successMessage = 'Registration successful! Logging you in...'
-
-        // Delay and redirect to login
-        setTimeout(() => {
-          this.$router.push('/login')
-
-          // Reset form
-          this.firstName = ''
-          this.lastName = ''
-          this.email = ''
-          this.password = ''
-          this.confirmPassword = ''
-          this.successMessage = ''
-          this.error = ''
-        }, 2000)
-      } catch (err) {
-        this.error = err.message
-      }
-    },
-  },
-}
-</script>
-
-<style src="./RegisterView.css"></style>
