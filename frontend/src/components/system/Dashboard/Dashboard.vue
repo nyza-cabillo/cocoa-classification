@@ -1,57 +1,4 @@
-<template>
-  <div class="dashboard-container">
-    <h1 class="title">
-      Cocoa Pod Disease Classifier
-      <button @click="handleLogout" class="logout-button">Logout</button>
-    </h1>
-
-    <div class="content">
-      <!-- Left Column -->
-      <div class="left-column">
-        <div class="upload-box">
-          <h3>Upload a Cocoa Pod Image</h3>
-          <input type="file" ref="fileInput" @change="handleFileChange" />
-        </div>
-        <div class="button-group">
-          <button @click="clearImage" class="clear-btn">Clear</button>
-          <button @click="submitImage" class="submit-btn">Submit</button>
-        </div>
-        <div class="feedback">
-          <label for="feedback">Your Feedback:</label>
-          <textarea
-            class="feedback-textarea"
-            id="feedback"
-            v-model="feedback"
-            placeholder="Feedback Here(Optional)"
-          ></textarea>
-          <button class="feedback-button" @click="submitFeedback">Submit Feedback</button>
-
-          <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
-          <p v-if="error" class="error-message">{{ error }}</p>
-        </div>
-      </div>
-
-      <!-- Right Column -->
-      <div class="right-column">
-        <h3>Inputted Image</h3>
-        <div v-if="imagePreview">
-          <img :src="imagePreview" alt="Preview" class="image-preview" />
-        </div>
-
-        <p v-if="predictionResult">
-          <strong>Prediction:</strong> {{ predictionResult }} (Confidence:
-          {{ predictionConfidence }}%)
-        </p>
-
-        <div v-if="perModelResults" class="prediction-result">
-          <h4>Model Predictions:</h4>
-          <pre>{{ perModelResults }}</pre>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
+<style src="./Dashboard.css"></style>
 <script>
 import { supabase } from '@/utils/supabase'
 import { uploadImageToSupabase } from '@/utils/supabase'
@@ -220,4 +167,56 @@ export default {
 }
 </script>
 
-<style src="./Dashboard.css"></style>
+<template>
+  <div class="dashboard-container">
+    <h1 class="title">
+      Cocoa Pod Disease Classifier
+      <button @click="handleLogout" class="logout-button">Logout</button>
+    </h1>
+
+    <div class="content">
+      <!-- Left Column -->
+      <div class="left-column">
+        <div class="upload-box">
+          <h3>Upload a Cocoa Pod Image</h3>
+          <input type="file" ref="fileInput" @change="handleFileChange" />
+        </div>
+        <div class="button-group">
+          <button @click="clearImage" class="clear-btn">Clear</button>
+          <button @click="submitImage" class="submit-btn">Submit</button>
+        </div>
+        <div class="feedback">
+          <label for="feedback">Your Feedback:</label>
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            v-model="feedback"
+            placeholder="Feedback Here(Optional)"
+          ></textarea>
+          <button class="feedback-button" @click="submitFeedback">Submit Feedback</button>
+
+          <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
+          <p v-if="error" class="error-message">{{ error }}</p>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="right-column">
+        <h3>Inputted Image</h3>
+        <div v-if="imagePreview">
+          <img :src="imagePreview" alt="Preview" class="image-preview" />
+        </div>
+
+        <p v-if="predictionResult">
+          <strong>Prediction:</strong> {{ predictionResult }} (Confidence:
+          {{ predictionConfidence }}%)
+        </p>
+
+        <div v-if="perModelResults" class="prediction-result">
+          <h4>Model Predictions:</h4>
+          <pre>{{ perModelResults }}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

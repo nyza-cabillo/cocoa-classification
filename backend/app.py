@@ -2,7 +2,7 @@ import io
 import os
 import numpy as np
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # 👈 Added for CORS support
+from flask_cors import CORS  #Added for CORS support
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 from tensorflow.keras.applications import ResNet50
 from tensorflow.keras.applications.resnet import preprocess_input as resnet_preprocess
@@ -22,7 +22,7 @@ supabase: Client = create_client(url, key)
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
-  # 👈 Enable CORS for Vue frontend (Vite default)
+  # Enable CORS for Vue frontend (Vite default)
 
 # Constants
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -134,7 +134,7 @@ def submit_feedback():
         else:
             return jsonify({'error': 'Failed to submit feedback'}), 500
     except Exception as e:
-        #  Provide detailed error info
+        #  error info
         error_message = f"Prediction failed: {str(e)}"
         print(error_message)
         return jsonify({'error': error_message}), 500
