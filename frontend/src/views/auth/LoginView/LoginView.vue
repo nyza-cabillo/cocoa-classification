@@ -1,5 +1,34 @@
 <!-- Import external CSS -->
 <style src="./LoginView.css"></style>
+<script>
+import { supabase } from '@/utils/supabase'
+
+export default {
+  name: 'LoginView',
+  data() {
+    return {
+      email: '',
+      password: '',
+      role: '',
+    }
+  },
+  methods: {
+    async handleLogin() {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: this.email,
+        password: this.password,
+      })
+
+      if (error) {
+        alert('Login failed: ' + error.message)
+      } else {
+        console.log('Login success:', data)
+        this.$router.push('/dashboard') //  redirect here
+      }
+    },
+  },
+}
+</script>
 
 <template>
   <div class="login-background">
@@ -46,33 +75,3 @@
     </div>
   </div>
 </template>
-
-<script>
-import { supabase } from '@/utils/supabase'
-
-export default {
-  name: 'LoginView',
-  data() {
-    return {
-      email: '',
-      password: '',
-      role: '',
-    }
-  },
-  methods: {
-    async handleLogin() {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: this.email,
-        password: this.password,
-      })
-
-      if (error) {
-        alert('Login failed: ' + error.message)
-      } else {
-        console.log('Login success:', data)
-        this.$router.push('/dashboard') //  redirect here
-      }
-    },
-  },
-}
-</script>

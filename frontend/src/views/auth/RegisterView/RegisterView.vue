@@ -1,9 +1,3 @@
-<template>
-  <div class="register-view">
-    <RegisterForm />
-  </div>
-</template>
-
 <script>
 import RegisterForm from './RegisterForm.vue'
 
@@ -14,3 +8,9 @@ export default {
   },
 }
 </script>
+
+<template>
+  <div class="register-view">
+    <RegisterForm />
+  </div>
+</template>

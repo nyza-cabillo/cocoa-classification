@@ -1,13 +1,15 @@
-from dotenv import load_dotenv
-import os
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 
-load_dotenv()  # Load the .env file
+app = Flask(__name__)
+CORS(app)  # Allow requests from your frontend
 
-url = os.getenv("VITE_SUPABASE_URL")
-key = os.getenv("VITE_SUPABASE_ANON_KEY")
+@app.route('/predict', methods=['POST'])  # <--- This is key
+def predict():
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image uploaded'}), 400
 
-print(f"VITE_SUPABASE_URL: {url}")
-print(f"VITE_SUPABASE_ANON_KEY: {key}")
+    image_file = request.files['image']
+    # Add your prediction logic here
 
-if not url or not key:
-    raise ValueError("Supabase URL and/or key is missing!")
+    return jsonify({'prediction': 'Healthy', 'confidence': 95.2})
