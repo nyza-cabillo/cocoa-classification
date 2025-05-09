@@ -22,7 +22,7 @@
             class="feedback-textarea"
             id="feedback"
             v-model="feedback"
-            placeholder="What do you think about the prediction?"
+            placeholder="Feedback Here(Optional)"
           ></textarea>
           <button class="feedback-button" @click="submitFeedback">Submit Feedback</button>
 
